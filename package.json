@@ -1,0 +1,25 @@
+{
+  "private": true,
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "build": "node scripts/build.js",
+    "dev": "node scripts/dev.js"
+  },
+  "name": "vue3-demo",
+  "version": "1.0.0",
+  "main": "index.js",
+  "license": "MIT",
+  "dependencies": {
+    "typescript": "^5.5.4"
+  },
+  "devDependencies": {
+    "@rollup/plugin-json": "^6.1.0",
+    "@rollup/plugin-node-resolve": "^15.2.3",
+    "execa": "^9.3.0",
+    "rollup": "^4.19.1",
+    "rollup-plugin-typescript2": "^0.36.0"
+  },
+  "type": "module"
+}
