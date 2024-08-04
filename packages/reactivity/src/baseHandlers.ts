@@ -1,6 +1,7 @@
-import { isObject } from "@vue/shared";
-import { ReactiveFlags } from "./constants";
+import { isObject, isArray, isIntegerKey, hasChanged, hasOwn } from "@vue/shared";
+import { ReactiveFlags, TrackOpTypes, TriggerOpTypes } from "./constants";
 import { reactive, reactiveMap, readonly, readonlyMap, Target } from "./reactive";
+import { track, trigger } from "./effect";
 
 class BaseReactiveHandler implements ProxyHandler<Target> {
   constructor(
@@ -29,6 +30,7 @@ class BaseReactiveHandler implements ProxyHandler<Target> {
     const res = Reflect.get(target, key, receiver);
     if (!isReadonly) {
       // 收集依赖
+      track(target, TrackOpTypes.GET, key);
     }
     // 浅层直接返回
     if (isShallow) {
@@ -49,9 +51,17 @@ class MutableReactiveHandler extends BaseReactiveHandler {
 
   set(target: object, key: string | symbol, value: unknown, receiver: object) {
     let oldValue = (target as any)[key];
+    // 区分数组还是对象 添加还是修改
+    const hadKey = isArray(target) && isIntegerKey(key) ? Number(key) < target.length : hasOwn(target, key);
+
     const result = Reflect.set(target, key, value, receiver);
     // 触发更新
-    if (oldValue !== value) {
+    if (!hadKey) {
+      // 添加
+      trigger(target, TriggerOpTypes.ADD, key, value);
+    } else if (hasChanged(value, oldValue)) {
+      // 修改
+      trigger(target, TriggerOpTypes.SET, key, value, oldValue);
     }
     return result;
   }
@@ -69,7 +79,7 @@ class ReadonlyReactiveHandler extends BaseReactiveHandler {
     );
     return true;
   }
-}
+} 
 
 export const mutableHandlers: ProxyHandler<object> =
   new MutableReactiveHandler();
