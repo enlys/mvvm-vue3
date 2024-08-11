@@ -18,6 +18,21 @@ export function createRender(rendererOptionDom) {
     setElementText: hostSetElementText,
   } = rendererOptionDom;
 
+  function updateComponentPreRender(instance, nextVNode) {
+    // 更新 nextVNode 的组件实例
+    // 现在 instance.vnode 是组件实例更新前的
+    // 所以之前的 props 就是基于 instance.vnode.props 来获取
+    // 接着需要更新 vnode ，方便下一次更新的时候获取到正确的值
+    nextVNode.component = instance;
+    instance.vnode = nextVNode;
+    instance.next = null;
+
+    const { props } = nextVNode;
+    console.log("更新组件的 props", props);
+    instance.props = props;
+    // 需要重置 vnode
+  }
+
   function setupRenderEffect(instance, container) {
     
     const instanceEffect = (instance.effect = effect(function componentEffect() {
@@ -41,7 +56,13 @@ export function createRender(rendererOptionDom) {
       } else {
         // 更新组件
         // 比对
-        let { next, bu, u } = instance;
+        let { next, bu, u, vnode } = instance;
+        // 如果有 next 的话， 说明需要更新组件的数据（props，slots 等）
+        // 先更新组件的数据，然后更新完成后，在继续对比当前组件的子元素
+        if (next) {
+          next.el = vnode.el;
+          updateComponentPreRender(instance, next);
+        }
         if (bu) {
           invokeArrayFns(bu);
         }
@@ -62,7 +83,10 @@ export function createRender(rendererOptionDom) {
   // 更新组件
   const updateComponent = (n1, n2) => {
     const instance = (n2.component = n1.component);
+    // next 就是新的 vnode
     instance.next = n2;
+    // update 是在 setupRenderEffect 里面初始化的，update 函数除了当内部的响应式对象发生改变的时候会调用
+    // update 中 next 的应用
     instance.update();
   };
   // 挂载组件
