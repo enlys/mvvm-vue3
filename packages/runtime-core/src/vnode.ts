@@ -18,7 +18,7 @@ export const createVNode = (type, props, children = null) => {
     children,
     key: props && props.key, // 获取key diff使用
     el: null, // 存储真实节点
-    shapeType,
+    shapeFlag: shapeType,
     component: {},
   };
   // 儿子标识
@@ -31,7 +31,7 @@ function normalizeChildren(vnode: {
   _v_isVNode: boolean; // 标识是虚拟节点
   type: any; props: any; children: any; key: any; // 获取key diff使用
   el: any; // 存储真实节点
-  shapeType: number;
+  shapeFlag: number;
 }, children: any) {
   let type = 0;
   if (children == null) {
@@ -41,7 +41,7 @@ function normalizeChildren(vnode: {
   } else {
     type = ShapeFlags.TEXT_CHILDREN;
   }
-  vnode.shapeType = vnode.shapeType | type; // 00000001 | 00000010 = 00000011
+  vnode.shapeFlag = vnode.shapeFlag | type; // 00000001 | 00000010 = 00000011
 }
 
 export function isVnode(vnode) {

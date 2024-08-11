@@ -3,6 +3,7 @@ import { apiCreateApp } from "./apiCreateApp";
 import { setupComponent, createComponentInstance } from "./component";
 import { effect } from "packages/reactivity/src/effect";
 import { CVnode, TEXT } from "./vnode";
+import { invokeArrayFns } from "./apiLifecycle";
 
 // runtime-core 方法
 export function createRender(rendererOptionDom) {
@@ -18,25 +19,52 @@ export function createRender(rendererOptionDom) {
   } = rendererOptionDom;
 
   function setupRenderEffect(instance, container) {
-    effect(function componentEffect() {
+    
+    const instanceEffect = (instance.effect = effect(function componentEffect() {
       if (!instance.isMounted) {
+
+        // 渲染之前
+        let { bm, m } = instance;
+        if (bm) {
+          invokeArrayFns(bm);
+        }
         // 挂载组件
         let proxy = instance.proxy;
         const subTree = (instance.subTree = instance.render.call(proxy, proxy));
         // 渲染dom
         patch(null, subTree, container);
+        // 渲染完成
+        if (m) {
+          invokeArrayFns(m);
+        }
         instance.isMounted = true;
       } else {
         // 更新组件
         // 比对
+        let { next, bu, u } = instance;
+        if (bu) {
+          invokeArrayFns(bu);
+        }
         const proxy = instance.proxy;
         const prevTree = instance.subTree;
         const nextTree = instance.render.call(proxy, proxy);
         instance.subTree = nextTree;
         patch(prevTree, nextTree, container);
+        if (u) {
+          invokeArrayFns(u);
+        }
       }
-    });
+    }));
+    instance.update = () => {
+      instanceEffect.run();
+    };
   }
+  // 更新组件
+  const updateComponent = (n1, n2) => {
+    const instance = (n2.component = n1.component);
+    instance.next = n2;
+    instance.update();
+  };
   // 挂载组件
   const mountComponent = (initialVnode, container) => {
     // 1.创建组件实例对象
@@ -54,6 +82,7 @@ export function createRender(rendererOptionDom) {
       mountComponent(n2, container);
     } else {
       // 更新
+      updateComponent(n1, n2);
     }
   };
   // 挂载子元素
@@ -271,8 +300,6 @@ export function createRender(rendererOptionDom) {
       // 首次渲染
       // 创建文本
       hostInsert((n2.el = hostCreateText(n2.children)), container);
-    } else {
-      // 更新
     }
   }
   const isSameVnode = (n1, n2) => {
@@ -291,17 +318,17 @@ export function createRender(rendererOptionDom) {
       unmount(n1);
       n1 = null;
     }
-    let { ShapeFlag, type } = n2;
+    let { shapeFlag, type } = n2;
     switch (type) {
       case TEXT:
         // 文本
         processText(n1, n2, container);
     }
-    if (ShapeFlag & ShapeFlags.ELEMENT) {
+    if (shapeFlag & ShapeFlags.ELEMENT) {
       // 元素
       // 处理元素
       processElement(n1, n2, container, anchor);
-    } else if (ShapeFlag & ShapeFlags.COMPONENT) {
+    } else if (shapeFlag & ShapeFlags.COMPONENT) {
       // 组件
       processComponent(n1, n2, container);
     }

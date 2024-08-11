@@ -8,20 +8,20 @@ export const componentPublicInstance = {
       return;
     }
     const { setupState, props, data } = instance;
-    if (hasOwn(props, key)) {
+    if (props && hasOwn(props, key)) {
       return props[key];
     }
-    if (hasOwn(setupState, key)) {
+    if (setupState && hasOwn(setupState, key)) {
       return setupState[key];
     }
     return data[key];
   },
   set({ _: instance }, key, value) {
     const { setupState, props, data } = instance;
-    if (hasOwn(props, key)) {
+    if (props &&  hasOwn(props, key)) {
       return props[key] = value;
     }
-    if (hasOwn(setupState, key)) {
+    if (setupState &&  hasOwn(setupState, key)) {
       return setupState[key] = value;
     }
     return data[key] = value;

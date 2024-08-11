@@ -1,6 +1,11 @@
 import { isFunction, isObject, ShapeFlags } from "@vue/shared";
 import { componentPublicInstance } from "./componentPublicInstance";
 
+export const getCurrentInstance = () => currentInstance;
+
+export const setCurrentInstance = (instance) => {
+  currentInstance = instance;
+}
 export const createComponentInstance = (vnode) => {
   const instance = {
     vnode,
@@ -23,6 +28,7 @@ export const setupComponent = (instance) => {
   const { props, children } = instance.vnode;
   instance.props = props; // 源码为initProps
   instance.children = children; //slots 插槽
+  // 实例暴露到全局 组件实例关联生命周期
   // 是否有setup
   if (instance.vnode.shapeFlag & ShapeFlags.STATEFUL_COMPONENT ) { // 4 表示有setup
     // 获取到setup返回的数据
@@ -32,17 +38,22 @@ export const setupComponent = (instance) => {
 }
 
 
-
+export let currentInstance;
 function setUpStateComponent(instance) {
   // 代理
   instance.proxy = new Proxy(instance.ctx, componentPublicInstance);
   let Component = instance.type;
+  
   let { setup }  = Component;
   // 获取setup
   if (setup) {
+    // 创建全局的 currentInstance
+    currentInstance = instance;
     const setupContext = createSetupContext(instance);
     const setupResult = setup(instance.props, setupContext);
-    handleSetipResult(instance, setupResult);
+    // 重置
+    currentInstance = null;
+    handleSetupResult(instance, setupResult);
     
   } else {
     finishComponentSetup(instance);
@@ -80,7 +91,7 @@ function finishComponentSetup(instance: any) {
    
   
 }
-function handleSetipResult(instance: any, setupResult: any) {
+function handleSetupResult(instance: any, setupResult: any) {
   // 1. setup返回的是一个函数
   if (isFunction(setupResult)) {
     instance.render = setupResult;

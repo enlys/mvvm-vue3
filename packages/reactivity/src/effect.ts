@@ -34,6 +34,9 @@ function createReactIveEffect(fn: any, options: any) {
   effect._isEffect = true;  // 是否是effect
   effect.raw = fn;   // 原始方法
   effect.options = options; // 用户的属性
+  effect.run = function () {
+    effect();
+  }
   return effect;
 }
 
