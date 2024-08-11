@@ -1,3 +1,5 @@
+export * from './shapeFlags'
+
 export function isObject(val) {
   return val !== null && typeof val === "object";
 }
@@ -16,3 +18,5 @@ export const isIntegerKey = (key: unknown) =>
   key !== 'NaN' &&
   key[0] !== '-' &&
   '' + parseInt(key, 10) === key;
+
+export const extend = Object.assign;
